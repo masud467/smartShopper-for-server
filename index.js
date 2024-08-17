@@ -5,13 +5,8 @@ require('dotenv').config()
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const port= process.env.PORT || 6001
 
-
 app.use(express.json())
 app.use(cors())
-
-
-
-
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.uoysey8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -28,6 +23,32 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+    const productCollection= client.db('smartShopper').collection('products')
+
+    // app.get('/products', async(req,res)=>{
+    //     const result= await productCollection.find().toArray()
+    //     res.send(result)
+    // })
+
+    // Pagination endpoint
+    app.get('/products', async (req, res) => {
+      const page = parseInt(req.query.page) || 1; // Default to page 1
+      const limit = parseInt(req.query.limit) || 10; // Default limit is 10
+      const skip = (page - 1) * limit; // Calculate how many products to skip
+      
+      const totalProducts = await productCollection.countDocuments(); // Total number of products
+      const totalPages = Math.ceil(totalProducts / limit); // Total pages available
+
+      const result = await productCollection.find().skip(skip).limit(limit).toArray(); // Fetch products with skip and limit
+      res.send({
+        products: result,
+        currentPage: page,
+        totalPages: totalPages,
+        totalProducts: totalProducts,
+      });
+    });
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");

@@ -41,6 +41,7 @@ async function run() {
     const category = req.query.category || ''; 
     const minPrice = parseFloat(req.query.minPrice) || 0; 
     const maxPrice = parseFloat(req.query.maxPrice) || Infinity;
+    const sortBy = req.query.sortBy || '';
       // Build the search filter
       const searchFilter = {
         name: { $regex: searchQuery, $options: 'i' },  // Name filter (case-insensitive)
@@ -50,10 +51,16 @@ async function run() {
     // if (brand) searchFilter.brand = brand;  // Filter by brand
     if (category) searchFilter.category = category;  // Filter by category
       
+    // Sorting logic
+    let sortOption = {};
+    if (sortBy === 'priceAsc') sortOption.price = 1; // Price Low to High
+    else if (sortBy === 'priceDesc') sortOption.price = -1; // Price High to Low
+    else if (sortBy === 'dateDesc') sortOption.creationDate = -1; // Newest First
+
       const totalProducts = await productCollection.countDocuments(searchFilter); // Total number of products
       const totalPages = Math.ceil(totalProducts / limit); // Total pages available
 
-      const result = await productCollection.find(searchFilter).skip(skip).limit(limit).toArray(); // Fetch products with skip and limit
+      const result = await productCollection.find(searchFilter).sort(sortOption).skip(skip).limit(limit).toArray(); // Fetch products with skip and limit
       res.send({
         products: result,
         currentPage: page,

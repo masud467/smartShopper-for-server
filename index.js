@@ -37,11 +37,18 @@ async function run() {
       const skip = (page - 1) * limit; // Calculate how many products to skip
 
       const searchQuery = req.query.name || ''; // Get the search query from the request
-    
+      // const brand = req.query.brand || ''; 
+    const category = req.query.category || ''; 
+    const minPrice = parseFloat(req.query.minPrice) || 0; 
+    const maxPrice = parseFloat(req.query.maxPrice) || Infinity;
       // Build the search filter
-      const searchFilter = searchQuery 
-          ? { name: { $regex: searchQuery, $options: 'i' } }  // Case-insensitive search
-          : {};
+      const searchFilter = {
+        name: { $regex: searchQuery, $options: 'i' },  // Name filter (case-insensitive)
+        price: { $gte: minPrice, $lte: maxPrice },  // Price range filter
+    };
+
+    // if (brand) searchFilter.brand = brand;  // Filter by brand
+    if (category) searchFilter.category = category;  // Filter by category
       
       const totalProducts = await productCollection.countDocuments(searchFilter); // Total number of products
       const totalPages = Math.ceil(totalProducts / limit); // Total pages available

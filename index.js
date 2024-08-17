@@ -35,11 +35,18 @@ async function run() {
       const page = parseInt(req.query.page) || 1; // Default to page 1
       const limit = parseInt(req.query.limit) || 10; // Default limit is 10
       const skip = (page - 1) * limit; // Calculate how many products to skip
+
+      const searchQuery = req.query.name || ''; // Get the search query from the request
+    
+      // Build the search filter
+      const searchFilter = searchQuery 
+          ? { name: { $regex: searchQuery, $options: 'i' } }  // Case-insensitive search
+          : {};
       
-      const totalProducts = await productCollection.countDocuments(); // Total number of products
+      const totalProducts = await productCollection.countDocuments(searchFilter); // Total number of products
       const totalPages = Math.ceil(totalProducts / limit); // Total pages available
 
-      const result = await productCollection.find().skip(skip).limit(limit).toArray(); // Fetch products with skip and limit
+      const result = await productCollection.find(searchFilter).skip(skip).limit(limit).toArray(); // Fetch products with skip and limit
       res.send({
         products: result,
         currentPage: page,
